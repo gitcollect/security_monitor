@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 #include <linux/netlink.h>
 
-#define NETLINK_USER 31
+#define NETLINK_CMD 29
 
 #define MAX_PAYLOAD 1024 /* maximum payload size*/
 struct sockaddr_nl src_addr, dest_addr;
@@ -16,7 +16,7 @@ struct msghdr msg;
 
 int main()
 {
-    sock_fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_USER);
+    sock_fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_CMD);
     if (sock_fd < 0)
         return -1;
 
@@ -38,7 +38,7 @@ int main()
     nlh->nlmsg_pid = getpid();
     nlh->nlmsg_flags = 0;
 
-    strcpy(NLMSG_DATA(nlh), "Hello");
+    strcpy(NLMSG_DATA(nlh), "1");
 
     iov.iov_base = (void *)nlh;
     iov.iov_len = nlh->nlmsg_len;
@@ -47,13 +47,9 @@ int main()
     msg.msg_iov = &iov;
     msg.msg_iovlen = 1;
 
-    printf("Sending message to kernel\n");
+    printf("Sending commands to kernel\n");
     sendmsg(sock_fd, &msg, 0);
-    printf("Waiting for message from kernel\n");
 
-    /* Read message from kernel */
-    recvmsg(sock_fd, &msg, 0);
-    printf("Received message payload: %s\n", (char *)NLMSG_DATA(nlh));
     close(sock_fd);
     return 0;
 }
