@@ -11,7 +11,7 @@ struct vtpm {
     char trust_evidence[32];
 };
 
-extern struct vtpm security_measure[MAX_VM];
+struct vtpm security_measure[MAX_VM];
 
 struct sock *nl_sk = NULL;
 
@@ -22,7 +22,7 @@ static void security_monitor_recv_msg(struct sk_buff *skb)
     int pid;
     struct sk_buff *skb_out;
     int msg_size;
-    char *msg = "Hello from kernel";
+    char *msg = security_measure[0].trust_evidence;
     int res;
 
     printk(KERN_INFO "Entering: %s\n", __FUNCTION__);
@@ -32,13 +32,11 @@ static void security_monitor_recv_msg(struct sk_buff *skb)
     nlh = (struct nlmsghdr *)skb->data;
     printk(KERN_INFO "Netlink received msg payload: %s\n", (char *)nlmsg_data(nlh));
     pid = nlh->nlmsg_pid; /*pid of sending process */
-    printk(KERN_INFO "pid: %d\n", pid);
 
     skb_out = nlmsg_new(msg_size, 0);
 
     if (!skb_out)
     {
-
         printk(KERN_ERR "Failed to allocate new skb\n");
         return;
 
@@ -71,8 +69,7 @@ static int __init security_monitor_init(void)
     }
 
     for (index = 0; index < MAX_VM; index++) {
-        if (security_measure[index].process_id != -1)
-            printk(KERN_INFO "%d: %d: %s\n", index, security_measure[index].process_id, security_measure[index].trust_evidence);
+        strcpy(security_measure[index].trust_evidence, "helloworld");
     }
     return 0;
 }
