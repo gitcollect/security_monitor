@@ -3,7 +3,7 @@
 #include <linux/netlink.h>
 #include <linux/skbuff.h>
 
-#define NETLINK_USER 32
+#define NETLINK_USER 30
 #define MAX_VM 20
 
 struct vtpm {
