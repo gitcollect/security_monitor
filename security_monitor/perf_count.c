@@ -9,7 +9,7 @@ static uint64_t SYS_CALL_TABLE_ADDR = 0xffffffff81801360;
 asmlinkage int (*kernel_call_perf_event_open)(struct perf_event_attr *attr_uptr, pid_t pid, int cpu, int group_fd, unsigned long flags);
 asmlinkage int (*kernel_call_close)(unsigned int fd);
 asmlinkage int (*kernel_call_ioctl)(unsigned int fd, unsigned int cmd, unsigned long arg);
-asmlinkage int (*kernel_call_read)(unsigned int fd, long long *buf, size_t count);
+asmlinkage int (*kernel_call_read)(unsigned int fd, int64_t *buf, size_t count);
 
 void ** kernel_call_sys_call_table;
 
@@ -27,6 +27,10 @@ int perf_count_start(pid_t pid, int *file_p) {
     pe.disabled = 1;
     pe.exclude_kernel = 0;
     pe.exclude_hv = 1;
+    pe.inherit = 1;
+    pe.inherit_stat = 1;
+    pe.enable_on_exec = 1;
+
 
     kernel_call_sys_call_table = (void**) SYS_CALL_TABLE_ADDR;
     kernel_call_perf_event_open = kernel_call_sys_call_table[__NR_perf_event_open];
@@ -40,6 +44,7 @@ int perf_count_start(pid_t pid, int *file_p) {
     fd = kernel_call_perf_event_open(&pe, pid, -1, -1, 0);
  
     set_fs(fs);
+
     if (fd == -1) {
         printk("open perf_event errors!\n");
         return -1;
@@ -61,13 +66,6 @@ int perf_count_start(pid_t pid, int *file_p) {
 
     printk("measuring instruction counter!\n");
 
-
-    ret = kernel_call_ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
-    if (ret == -1) {
-        printk("disable counter errors!\n");
-        return -1;
-    }
-
     return 0;
 }
 
@@ -80,10 +78,17 @@ int perf_count_stop(int *file_p, int64_t *count_p) {
 
     fd = *file_p;
 
+    ret = kernel_call_ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
+    if (ret == -1) {
+        printk("disable counter errors!\n");
+        return -1;
+    }
+
     fs = get_fs();     
     set_fs (get_ds());
     ret = kernel_call_read(fd, &count, sizeof(int64_t));
     set_fs(fs);
+
     if (ret == -1) {
         printk("read counter errors!\n");
         return -1;
