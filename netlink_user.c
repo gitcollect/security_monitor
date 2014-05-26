@@ -38,7 +38,7 @@ int main()
     nlh->nlmsg_pid = getpid();
     nlh->nlmsg_flags = 0;
 
-    int cmd = 0x30000000;
+    int cmd = 0x20000000;
     char cmd_string[10];
     sprintf(cmd_string, "%d", cmd);
     strcpy(NLMSG_DATA(nlh), cmd_string);

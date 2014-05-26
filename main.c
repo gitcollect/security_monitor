@@ -3,6 +3,8 @@
 #include <linux/netlink.h>
 #include <linux/skbuff.h>
 
+#include "security_monitor/perf_count.h"
+
 #define NETLINK_USER 30
 #define NETLINK_CMD 29
 
@@ -22,7 +24,10 @@ long measure_index;
 
 long cmd;
 
-static void security_monitor_recv_msg(struct sk_buff *skb)
+
+int file_p;
+
+static void attestation_service_recv_msg(struct sk_buff *skb)
 {
 
     struct nlmsghdr *nlh;
@@ -58,7 +63,7 @@ static void security_monitor_recv_msg(struct sk_buff *skb)
         printk(KERN_INFO "Error while sending bak to user\n");
 }
 
-static void security_monitor_recv_cmd(struct sk_buff *skb)
+static void attestation_service_recv_cmd(struct sk_buff *skb)
 {
     int cmd_type;
     struct nlmsghdr *nlh;
@@ -82,18 +87,22 @@ static void security_monitor_recv_cmd(struct sk_buff *skb)
 
 }
 
-static int __init security_monitor_init(void)
+static int __init attestation_service_init(void)
 {
     struct netlink_kernel_cfg cfg = {
-        .input = security_monitor_recv_msg,
+        .input = attestation_service_recv_msg,
     };
     
     struct netlink_kernel_cfg cfg_cmd = {
-        .input = security_monitor_recv_cmd,
+        .input = attestation_service_recv_cmd,
     };
+
+    pid_t pid;
+    int ret;    
 
     printk("entering security monitor module\n");
     measure_index = 0;
+    pid = 10213;
     nl_sk = netlink_kernel_create(&init_net, NETLINK_USER, &cfg);
     nl_sk_cmd = netlink_kernel_create(&init_net, NETLINK_CMD, &cfg_cmd);
 
@@ -103,19 +112,24 @@ static int __init security_monitor_init(void)
         return -10;
     }
 
-    strcpy(security_measure[0].trust_evidence, "helloworld");
-    strcpy(security_measure[1].trust_evidence, "worldhello");
+//    strcpy(security_measure[0].trust_evidence, "helloworld");
+//    strcpy(security_measure[1].trust_evidence, "worldhello");
+
+    ret = perf_count_start(pid, &file_p);
     return 0;
 }
 
-static void __exit security_monitor_exit(void)
+static void __exit attestation_service_exit(void)
 {
-    printk(KERN_INFO "exiting secu module\n");
+    uint64_t result = 0;
+    perf_count_stop(&file_p, &result);
+    printk("the result: %lld\n", result);
+    printk(KERN_INFO "exiting security monitor module\n");
     netlink_kernel_release(nl_sk);
     netlink_kernel_release(nl_sk_cmd);
 }
 
-module_init(security_monitor_init); 
-module_exit(security_monitor_exit);
+module_init(attestation_service_init); 
+module_exit(attestation_service_exit);
 
 MODULE_LICENSE("GPL");

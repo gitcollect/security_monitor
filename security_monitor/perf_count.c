@@ -2,9 +2,9 @@
 #include <linux/syscalls.h>
 #include <linux/delay.h>
 
-static uint64_t SYS_CALL_TABLE_ADDR = 0xffffffff81801360;
+#include "perf_count.h"
 
-//void (*my_gettimeofday)(struct timeval *tv, struct timezone *tz) = 0xffffffff8105ab30;
+static uint64_t SYS_CALL_TABLE_ADDR = 0xffffffff81801360;
 
 asmlinkage int (*kernel_call_perf_event_open)(struct perf_event_attr *attr_uptr, pid_t pid, int cpu, int group_fd, unsigned long flags);
 asmlinkage int (*kernel_call_close)(unsigned int fd);
@@ -13,12 +13,11 @@ asmlinkage int (*kernel_call_read)(unsigned int fd, long long *buf, size_t count
 
 void ** kernel_call_sys_call_table;
 
-static int __init kernel_syscall_init(void)
-{
+int perf_count_start(pid_t pid, int *file_p) {
+
     struct perf_event_attr pe;
     int fd;
     int ret;
-    long long count;
     mm_segment_t fs;
 
     memset(&pe, 0, sizeof(struct perf_event_attr));
@@ -38,7 +37,7 @@ static int __init kernel_syscall_init(void)
 
     fs = get_fs();     
     set_fs (get_ds());
-    fd = kernel_call_perf_event_open(&pe, 15796, -1, -1, 0);
+    fd = kernel_call_perf_event_open(&pe, pid, -1, -1, 0);
     set_fs(fs);
     if (fd == -1) {
         printk("open perf_event errors!\n");
@@ -51,6 +50,8 @@ static int __init kernel_syscall_init(void)
         return -1;
     }
 
+    file_p = &fd;
+
     ret = kernel_call_ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
     if (ret == -1) {
         printk("enable counter errors!\n");
@@ -59,7 +60,6 @@ static int __init kernel_syscall_init(void)
 
     printk("measuring instruction counter!\n");
 
-    msleep(5000);
 
     ret = kernel_call_ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
     if (ret == -1) {
@@ -67,9 +67,21 @@ static int __init kernel_syscall_init(void)
         return -1;
     }
 
+    return 0;
+}
+
+
+int perf_count_stop(int *file_p, uint64_t *count_p) {
+    int fd;
+    int ret;
+    uint64_t count;
+    mm_segment_t fs;
+
+    fd = *file_p;
+
     fs = get_fs();     
     set_fs (get_ds());
-    ret = kernel_call_read(fd, &count, sizeof(long long));
+    ret = kernel_call_read(fd, &count, sizeof(uint64_t));
     set_fs(fs);
     if (ret == -1) {
         printk("read counter errors!\n");
@@ -83,15 +95,7 @@ static int __init kernel_syscall_init(void)
         return -1;
     }
 
+    count_p = &count;
+
     return 0;
 }
-
-static void __exit kernel_syscall_exit(void)
-{
-    printk("Leaving the example module\n");
-}
-
-module_init(kernel_syscall_init); 
-module_exit(kernel_syscall_exit);
-
-MODULE_LICENSE("GPL");
