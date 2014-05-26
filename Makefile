@@ -2,10 +2,12 @@ KDIR := /lib/modules/$(shell uname -r)/build
 
 obj-m += security_monitor.o
 
-default:
+all: kernel user
+
+kernel:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
 
-userspace:
+user:
 	$(CC) netlink_user.c -o netlink_user
 
 clean:

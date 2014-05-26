@@ -20,6 +20,8 @@ struct sock *nl_sk_cmd = NULL;
 
 long measure_index;
 
+long cmd;
+
 static void security_monitor_recv_msg(struct sk_buff *skb)
 {
 
@@ -58,12 +60,26 @@ static void security_monitor_recv_msg(struct sk_buff *skb)
 
 static void security_monitor_recv_cmd(struct sk_buff *skb)
 {
-
+    int cmd_type;
     struct nlmsghdr *nlh;
     nlh = (struct nlmsghdr *)skb->data;
-    kstrtol((char *)nlmsg_data(nlh), 10, &measure_index);
-    printk(KERN_INFO "Netlink received msg payload: %s\n", (char *)nlmsg_data(nlh));
-    printk(KERN_INFO "Netlink received msg payload: %ld\n", measure_index);
+    kstrtol((char *)nlmsg_data(nlh), 10, &cmd);
+    cmd_type = cmd >> 28;
+    switch(cmd_type) {
+        case 0:
+            printk(KERN_INFO "startup integrity checking\n");
+            break;
+        case 1:
+            printk(KERN_INFO "runtime start counting\n");
+            break;
+        case 2:
+            printk(KERN_INFO "runtime stop counting\n");
+            break;
+        default:
+            printk(KERN_INFO "Invalid cmmand\n");
+    }
+//    printk(KERN_INFO "Netlink received msg payload: %s\n", (char *)nlmsg_data(nlh));
+//    printk(KERN_INFO "Netlink received msg payload: %ld\n", measure_index);
 
 }
 
