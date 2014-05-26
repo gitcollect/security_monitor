@@ -38,6 +38,7 @@ int perf_count_start(pid_t pid, int *file_p) {
     fs = get_fs();     
     set_fs (get_ds());
     fd = kernel_call_perf_event_open(&pe, pid, -1, -1, 0);
+ 
     set_fs(fs);
     if (fd == -1) {
         printk("open perf_event errors!\n");
@@ -50,7 +51,7 @@ int perf_count_start(pid_t pid, int *file_p) {
         return -1;
     }
 
-    file_p = &fd;
+    *file_p = fd;
 
     ret = kernel_call_ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
     if (ret == -1) {
@@ -71,17 +72,17 @@ int perf_count_start(pid_t pid, int *file_p) {
 }
 
 
-int perf_count_stop(int *file_p, uint64_t *count_p) {
+int perf_count_stop(int *file_p, int64_t *count_p) {
     int fd;
     int ret;
-    uint64_t count;
+    int64_t count;
     mm_segment_t fs;
 
     fd = *file_p;
 
     fs = get_fs();     
     set_fs (get_ds());
-    ret = kernel_call_read(fd, &count, sizeof(uint64_t));
+    ret = kernel_call_read(fd, &count, sizeof(int64_t));
     set_fs(fs);
     if (ret == -1) {
         printk("read counter errors!\n");
@@ -95,7 +96,7 @@ int perf_count_stop(int *file_p, uint64_t *count_p) {
         return -1;
     }
 
-    count_p = &count;
+    *count_p = count;
 
     return 0;
 }

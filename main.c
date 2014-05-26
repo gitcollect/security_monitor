@@ -102,7 +102,7 @@ static int __init attestation_service_init(void)
 
     printk("entering security monitor module\n");
     measure_index = 0;
-    pid = 10213;
+    pid = 3846;
     nl_sk = netlink_kernel_create(&init_net, NETLINK_USER, &cfg);
     nl_sk_cmd = netlink_kernel_create(&init_net, NETLINK_CMD, &cfg_cmd);
 
