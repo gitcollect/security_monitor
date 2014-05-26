@@ -64,6 +64,7 @@ static void security_monitor_recv_cmd(struct sk_buff *skb)
     struct nlmsghdr *nlh;
     nlh = (struct nlmsghdr *)skb->data;
     kstrtol((char *)nlmsg_data(nlh), 10, &cmd);
+    printk(KERN_INFO "received cmd: %ld\n", cmd);
     cmd_type = cmd >> 28;
     switch(cmd_type) {
         case 0:
@@ -78,8 +79,6 @@ static void security_monitor_recv_cmd(struct sk_buff *skb)
         default:
             printk(KERN_INFO "Invalid cmmand\n");
     }
-//    printk(KERN_INFO "Netlink received msg payload: %s\n", (char *)nlmsg_data(nlh));
-//    printk(KERN_INFO "Netlink received msg payload: %ld\n", measure_index);
 
 }
 
@@ -113,6 +112,7 @@ static void __exit security_monitor_exit(void)
 {
     printk(KERN_INFO "exiting secu module\n");
     netlink_kernel_release(nl_sk);
+    netlink_kernel_release(nl_sk_cmd);
 }
 
 module_init(security_monitor_init); 

@@ -38,7 +38,10 @@ int main()
     nlh->nlmsg_pid = getpid();
     nlh->nlmsg_flags = 0;
 
-    strcpy(NLMSG_DATA(nlh), "0");
+    int cmd = 0x30000000;
+    char cmd_string[10];
+    sprintf(cmd_string, "%d", cmd);
+    strcpy(NLMSG_DATA(nlh), cmd_string);
 
     iov.iov_base = (void *)nlh;
     iov.iov_len = nlh->nlmsg_len;
@@ -46,6 +49,7 @@ int main()
     msg.msg_namelen = sizeof(dest_addr);
     msg.msg_iov = &iov;
     msg.msg_iovlen = 1;
+
 
     printf("Sending commands to kernel\n");
     sendmsg(sock_fd, &msg, 0);
