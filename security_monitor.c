@@ -13,7 +13,7 @@ struct vtpm {
     char trust_evidence[32];
 };
 
-struct vtpm security_measure[MAX_VM];
+extern struct vtpm security_measure[MAX_VM];
 
 struct sock *nl_sk = NULL;
 struct sock *nl_sk_cmd = NULL;
