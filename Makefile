@@ -1,4 +1,5 @@
 KDIR := /lib/modules/$(shell uname -r)/build
+KBUILD_EXTRA_SYMBOLS := /opt/stack/kvm-kmod/Module.symvers
 
 obj-m += security_monitor.o
 
